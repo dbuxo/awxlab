@@ -1,0 +1,86 @@
+#!/usr/bin/env ansible-playbook
+
+---
+- hosts: slave
+  gather_facts: True
+  become: True
+
+  vars:
+    repositories:
+      epel:
+        url: 'https://download.fedoraproject.org/pub/epel/$releasever/$basearch/'
+        description: 'Repositorio de EPEL'
+      docker:
+        url: 'https://download.docker.com/linux/centos/7/$basearch/stable'
+        description: 'Repositorio de Docker'
+
+  tasks:
+    - name: 'Añadir repositorio'
+      yum_repository:
+        name: '{{ item.key }}'
+        description: '{{ item.value.description }}'
+        baseurl: '{{ item.value.url }}'
+        gpgcheck: False
+        timeout: 100
+      with_dict: '{{ repositories }}'
+
+    - name: 'Añadir repositorio de NodeJS'
+      script: files/nodejs.sh
+      args:
+        creates: /tmp/nodejs.txt
+      register: output
+
+    - debug:
+        var: output
+        verbosity: 1
+
+    - file:
+        path: /tmp/nodejs.txt
+        state: touch
+      when: 
+
+    - name: 'Instalar dependencias'
+      yum:
+        name:
+          - 'git'
+          - 'ansible'
+          - 'docker-ce'
+          - 'python2-pip'
+          - 'make'
+          - 'gettext'
+          - 'gcc-c++'
+          - 'bzip2'
+          - 'nodejs'
+        state: present
+      
+    - name: 'Instalar docker-py'
+      pip:
+        name: 'docker-py'
+        state: present
+
+    - name: 'Asegurarse de que Docker está funcionando'
+      service:
+        name: 'docker'
+        state: started
+        enabled: True
+
+    - name: 'Añadir el grupo docker'
+      group:
+        name: 'docker'
+        state: present
+    - name: 'Añadir el usuario al grupo docker'
+      user:
+        name: 'vagrant'
+        groups: 'vagrant,docker'
+
+    - name: 'Clonar repositorio de AWX'
+      git:
+        dest: 'awx'
+        repo: 'https://github.com/ansible/awx.git'
+        version: 'devel'
+          
+    - name: 'Instalar AWX'
+      command: 'ansible-playbook -i inventory install.yml'
+      args:
+        chdir: '~/awx/installer'
+      become: False

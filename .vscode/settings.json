@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "**/*.yml": "ansible",
+        "inventory/hosts": "ini",
     },
     "editor.insertSpaces": true,
     "editor.tabSize": 2,
