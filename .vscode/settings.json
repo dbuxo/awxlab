@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "**/*.yml": "ansible",
+    },
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2,
+    "files.eol": "\n",
+    "ansible.autocompletion": true,
+    "ansible.validation": true
+}
